@@ -1,0 +1,45 @@
+name: Keep Streak Green
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 9 * * *'
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  keep-green:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Auto-commit to keep the repo alive
+        run: |
+          if git rev-parse --verify HEAD >/dev/null 2>&1; then
+            git commit --allow-empty -m "chore: keep streak green"
+          else
+            git checkout -b main
+            echo "keep-streak-green" > .keep-streak-green
+            git add .keep-streak-green
+            git commit -m "chore: initialize repository"
+          fi
+
+          BRANCH="${GITHUB_REF_NAME:-main}"
+          if [ -z "$BRANCH" ]; then
+            BRANCH="main"
+          fi
+          git push origin HEAD:"$BRANCH"
